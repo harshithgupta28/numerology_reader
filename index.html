@@ -1,0 +1,717 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Birthday Numerology Reader — Inline</title>
+  <link rel="icon" href="./assets/favicon.svg" />
+
+  <!-- Tailwind CSS (CDN) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- React 18 + ReactDOM (CDN) -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+
+  <!-- Babel Standalone to compile JSX in the browser -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <!-- html2canvas + jsPDF for PDF export -->
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+
+  <style>
+/* Minimal optional styles; primary styling via Tailwind classes */
+::selection { background: rgba(16,185,129,0.35); color: #111827; }
+a { text-decoration: underline; }
+
+  </style>
+</head>
+<body class="min-h-screen bg-neutral-950 text-neutral-100">
+  <noscript>
+    <div style="padding:1rem;background:#111;color:#fff;">
+      This app requires JavaScript. Please enable it.
+    </div>
+  </noscript>
+  <div id="root"></div>
+
+  <!-- Inline app code to avoid file:// CORS issues -->
+  <script type="text/babel">
+const { useState, useMemo } = React;
+
+// Numerology mapping and content (derived from your source)
+const NUMBER_DATA = {
+  1: {
+    planet: "Sun",
+    element: "Fire",
+    alias: "Surya",
+    origin:
+      "Number 1 carries the solar spark — individuality, leadership, creation. In Vedic symbolism Surya is the life‑giver; in Western numerology, 1 is the primal initiator.",
+    core: [
+      "Born leaders, ambitious, and goal‑oriented.",
+      "Natural at taking initiative and inspiring others.",
+      "Thrive when they’re in control of their work and destiny.",
+      "Prefer originality over imitation.",
+      "Strong‑willed, optimistic, and high in self‑belief.",
+    ],
+    lucky: {
+      numbers: [1, 10, 19, 28],
+      colors: ["gold", "orange", "yellow", "crimson"],
+      gemstones: ["Ruby (Surya ratna)", "Garnet"],
+      days: ["Sunday", "Monday"],
+      metal: "Gold",
+    },
+    compatibility: {
+      harmonise: ["3 (Jupiter)", "5 (Mercury)", "6 (Venus)"],
+      challenge: ["8 (Saturn)", "7 (Ketu)"],
+    },
+    strengthsDetailed: [
+      "Visionary thinking",
+      "Determination & persistence",
+      "Charisma and influence",
+      "Creative problem‑solving",
+    ],
+    challengesDetailed: [
+      "Ego and arrogance if not grounded",
+      "Impatience or restlessness",
+      "Struggle with taking advice from others",
+      "Risk of over‑controlling in relationships or work",
+    ],
+    health:
+      "Heart vitality, blood pressure, heat/pitta balance; benefit from sunrise routines, hydration, pranayama.",
+    careers:
+      "Entrepreneur, CEO/executive, leader in politics or business; motivational speaker/coach/influencer; creative director, artist/performer; innovator, inventor, trend‑setter.",
+    spiritual:
+      "Lesson of right use of power — lead with warmth, not burn; practice generosity and dharma‑aligned action.",
+    personalities: [
+      "Elon Musk — 28 → 1",
+      "Bill Gates — 28 → 1",
+      "Lady Gaga — 28 → 1",
+      "Indira Gandhi — 19 → 1",
+      "Aishwarya Rai — 1",
+    ],
+  },
+  2: {
+    planet: "Moon",
+    element: "Water",
+    alias: "Chandra",
+    origin:
+      "Number 2 is lunar — receptive, intuitive, relational. Chandra reflects emotions, rhythm, and caregiving.",
+    core: [
+      "Gentle, nurturing, sensitive, and empathetic.",
+      "Peace‑loving diplomat who maintains harmony.",
+      "Intuitive and emotionally attuned; reads people easily.",
+      "Values partnership, support, and community.",
+      "Prefers collaboration over competition.",
+    ],
+    lucky: {
+      numbers: [2, 11, 20, 29],
+      colors: ["pearl white", "silver", "pastels", "mint"],
+      gemstones: ["Pearl (Moti)", "Moonstone", "Jade"],
+      days: ["Monday", "Friday"],
+      metal: "Silver",
+    },
+    compatibility: {
+      harmonise: ["4 (Rahu)", "6 (Venus)", "8 (Saturn)"],
+      challenge: ["1 (Sun)", "9 (Mars)"],
+    },
+    strengthsDetailed: [
+      "Empathy & diplomacy",
+      "Organised, polite, charming",
+      "Teamwork & relationship‑building",
+      "Creativity with a soft aesthetic",
+    ],
+    challengesDetailed: [
+      "Over‑sensitivity or low confidence",
+      "Indecision; struggles to say ‘no’",
+      "Tendency toward people‑pleasing or codependency",
+      "Takes things personally",
+    ],
+    health:
+      "Fluids, digestion, sleep cycles; favor cooling foods, consistent routines, and emotional boundaries.",
+    careers:
+      "Counsellor/therapist, teacher, HR, hospitality, mediator/diplomat, design/arts, spiritual caregiver.",
+    spiritual:
+      "Lesson of emotional balance and trust in cycles; cultivate intuition through meditation and journaling.",
+    personalities: [
+      "Amitabh Bachchan — 11 → 2",
+      "Shah Rukh Khan — 2",
+      "Princess Diana — 2",
+    ],
+  },
+  3: {
+    planet: "Jupiter",
+    element: "Fire",
+    alias: "Guru / Brihaspati",
+    origin:
+      "Number 3 radiates wisdom and expansion. Jupiter bestows optimism, learning, and mentorship.",
+    core: [
+      "Creative, expressive, communicative, and optimistic.",
+      "Natural storyteller/teacher with big‑picture vision.",
+      "Playful, social, and spiritually curious.",
+      "Generous and uplifting presence.",
+    ],
+    lucky: {
+      numbers: [3, 12, 21, 30],
+      colors: ["yellow", "saffron", "royal blue", "orange"],
+      gemstones: ["Yellow Sapphire (Pukhraj)", "Citrine", "Turquoise"],
+      days: ["Thursday", "Sunday"],
+      metal: "Gold (auspicious)",
+    },
+    compatibility: {
+      harmonise: ["1 (Sun)", "6 (Venus)", "9 (Mars)"],
+      challenge: ["4 (Rahu)", "8 (Saturn)"],
+    },
+    strengthsDetailed: [
+      "Excellent communicator",
+      "Optimism & generosity",
+      "Teaching/mentoring",
+      "Vision & philosophy",
+    ],
+    challengesDetailed: [
+      "Scattered focus/over‑promising",
+      "Complacency or vanity",
+      "Dogmatism; needs humility",
+    ],
+    health:
+      "Liver/weight balance; benefit from disciplined study, moderate exercise, and consistent routines.",
+    careers:
+      "Education, public speaking, media, strategy, law, finance, spiritual/ethical leadership.",
+    spiritual:
+      "Lesson of humility with abundance; serve as a guide while staying a student of life.",
+    personalities: [
+      "Jeff Bezos — 12 → 3",
+      "Warren Buffett — 30 → 3",
+      "Christopher Nolan — 30 → 3",
+    ],
+  },
+  4: {
+    planet: "Rahu",
+    element: "Air",
+    alias: "North Node",
+    origin:
+      "Number 4 is the unconventional builder. Rahu brings innovation, systems, and out‑of‑box thinking.",
+    core: [
+      "Disciplined, pragmatic, methodical foundation‑builder.",
+      "Analytical reformer who blends tradition with innovation.",
+      "Dependable, detail‑oriented, process‑driven.",
+    ],
+    lucky: {
+      numbers: [4, 13, 22, 31],
+      colors: ["electric blue", "black", "graphite", "steel grey"],
+      gemstones: ["Hessonite (Gomed)", "Amethyst"],
+      days: ["Saturday", "Sunday"],
+      metal: "Iron/Steel",
+    },
+    compatibility: {
+      harmonise: ["2 (Moon)", "7 (Ketu) — karmic complement", "8 (Saturn)"],
+      challenge: ["3 (Jupiter)", "6 (Venus)"],
+    },
+    strengthsDetailed: [
+      "Structure & systems",
+      "Work ethic & loyalty",
+      "Analytical/technical prowess",
+      "Resilience",
+    ],
+    challengesDetailed: [
+      "Rigidity or stubbornness",
+      "Overwork & stress cycles",
+      "Resistance to change",
+    ],
+    health:
+      "Nervous system and stress; ground with breathwork, nature walks, screen hygiene, and steady sleep.",
+    careers:
+      "Engineering, operations, administration, architecture, security/analytics, public systems.",
+    spiritual:
+      "Channel disruptive energy into constructive service; practice detachment and flexibility.",
+    personalities: ["Sardar Patel — 31 → 4", "Preity Zinta — 31 → 4"],
+  },
+  5: {
+    planet: "Mercury",
+    element: "Air",
+    alias: "Budha",
+    origin:
+      "Number 5 is the communicator and traveller. Mercury rules intellect, trade, and adaptability.",
+    core: [
+      "Energetic, freedom‑loving, witty, adaptable.",
+      "Thrives on change, travel, trade, and networking.",
+      "Curious mind; quick learner and connector.",
+    ],
+    lucky: {
+      numbers: [5, 14, 23],
+      colors: ["emerald", "lime", "sky", "white"],
+      gemstones: ["Emerald (Panna)", "Peridot", "Green Aventurine"],
+      days: ["Wednesday"],
+      metal: "Bronze",
+    },
+    compatibility: {
+      harmonise: ["1 (Sun)", "3 (Jupiter)", "6 (Venus)"],
+      challenge: ["7 (Ketu)", "8 (Saturn)"],
+    },
+    strengthsDetailed: [
+      "Quick learning",
+      "Networking & sales flair",
+      "Versatility",
+      "Humour & social ease",
+    ],
+    challengesDetailed: [
+      "Scattered focus/FOMO",
+      "Impulsiveness",
+      "Avoids routine; needs grounding",
+    ],
+    health:
+      "Respiratory & gut balance; light regular meals, movement, and mindful digital use.",
+    careers:
+      "Media, sales/marketing, product, logistics, data, writing, travel & tourism.",
+    spiritual:
+      "Lesson of truthful speech and mindful curiosity; integrate mind with heart.",
+    personalities: ["Aamir Khan — 14 → 5", "Deepika Padukone — 5", "Virat Kohli — 5"],
+  },
+  6: {
+    planet: "Venus",
+    element: "Earth",
+    alias: "Shukra",
+    origin:
+      "Number 6 loves harmony, beauty, relationships, and comfort. Venus refines taste and values.",
+    core: [
+      "Warm, nurturing, relationship‑oriented peacemaker.",
+      "Aesthetic sense; brings elegance to daily life.",
+      "Protective of loved ones; values home and fairness.",
+    ],
+    lucky: {
+      numbers: [6, 15, 24],
+      colors: ["rose", "pastel green", "cream", "white"],
+      gemstones: ["Diamond (Heera)", "Zircon", "Opal", "Turquoise"],
+      days: ["Friday", "Wednesday"],
+      metal: "Copper",
+    },
+    compatibility: {
+      harmonise: ["1 (Sun)", "3 (Jupiter)", "5 (Mercury)"],
+      challenge: ["7 (Ketu)", "9 (Mars)"],
+    },
+    strengthsDetailed: [
+      "Compassion & caregiving",
+      "Partnership & negotiation",
+      "Aesthetics & creativity",
+      "Community building",
+    ],
+    challengesDetailed: [
+      "People‑pleasing",
+      "Over‑indulgence/comfort seeking",
+      "Attachment & boundary drift",
+    ],
+    health:
+      "Sugar balance, kidneys, reproductive vitality; restore via music/arts, balanced diet, and gentle movement.",
+    careers:
+      "Design, hospitality, HR, wellness/beauty, branding, diplomacy, education.",
+    spiritual:
+      "Balance desire with devotion; practice gratitude and seva while maintaining self‑love.",
+    personalities: [
+      "Dalai Lama — 6",
+      "Madhuri Dixit — 15 → 6",
+      "Sachin Tendulkar — 24 → 6",
+    ],
+  },
+  7: {
+    planet: "Ketu",
+    element: "Water",
+    alias: "South Node",
+    origin:
+      "Number 7 is mystical, analytical, and inward. Ketu brings detachment and deep research.",
+    core: [
+      "Quiet intellect and deep spiritual intuition.",
+      "Seeker of hidden truths; researcher and analyst.",
+      "Values solitude, nature, and minimalism.",
+    ],
+    lucky: {
+      numbers: [7, 16, 25],
+      colors: ["indigo", "violet", "white", "green"],
+      gemstones: ["Cat's Eye (Lehsunia)", "Moonstone", "Pearl"],
+      days: ["Monday", "Thursday"],
+      metal: "Silver",
+    },
+    compatibility: {
+      harmonise: ["2 (Moon)", "4 (Rahu) — karmic axis", "8 (Saturn)"],
+      challenge: ["5 (Mercury)", "6 (Venus)"],
+    },
+    strengthsDetailed: [
+      "Insight & discernment",
+      "Spiritual depth",
+      "Research & analysis",
+      "Minimalist clarity",
+    ],
+    challengesDetailed: [
+      "Withdrawal/isolation",
+      "Skepticism",
+      "Non‑conformity causing friction",
+    ],
+    health:
+      "Psychic sensitivity, sleep, and skin; benefit from meditation, nature, salt baths, and tech boundaries at night.",
+    careers:
+      "R&D, cybersecurity, data science, psychology, healing arts, academia, consulting.",
+    spiritual:
+      "Lesson of non‑attachment and discernment; seek truth beyond appearances.",
+    personalities: ["M. S. Dhoni — 7", "Bruce Lee — 7", "Saif Ali Khan — 16 → 7"],
+  },
+  8: {
+    planet: "Saturn",
+    element: "Earth",
+    alias: "Shani",
+    origin:
+      "Number 8 is discipline, justice, and endurance. Saturn tests for mastery and fairness.",
+    core: [
+      "Authority, discipline, and strategic management.",
+      "Ambitious builders of systems and legacy.",
+      "Fairness‑minded; strong sense of responsibility.",
+    ],
+    lucky: {
+      numbers: [8, 17, 26],
+      colors: ["navy", "black", "teal", "purple"],
+      gemstones: ["Blue Sapphire (Neelam)", "Onyx", "Amethyst"],
+      days: ["Saturday"],
+      metal: "Iron",
+    },
+    compatibility: {
+      harmonise: ["2 (Moon)", "4 (Rahu)", "6 (Venus)"],
+      challenge: ["1 (Sun)", "9 (Mars)"],
+    },
+    strengthsDetailed: [
+      "Work ethic & persistence",
+      "Integrity & justice",
+      "Systems mastery",
+      "Strategic leadership",
+    ],
+    challengesDetailed: [
+      "Melancholy or severity",
+      "Delays & frustration",
+      "Harsh self‑talk/workaholism",
+    ],
+    health:
+      "Bones, joints, teeth; thrive on routine, strength training, sunlight, and patience.",
+    careers:
+      "Law, compliance, finance ops, engineering, administration, public service, infrastructure.",
+    spiritual:
+      "Lesson of karma and stewardship; build structures that outlast you.",
+    personalities: [
+      "Narendra Modi — 17 → 8",
+      "Asha Bhosle — 8",
+      "AB de Villiers — 17 → 8",
+    ],
+  },
+  9: {
+    planet: "Mars",
+    element: "Fire",
+    alias: "Mangala",
+    origin:
+      "Number 9 is courage, action, and protection. Mars brings drive, passion, and heroic service.",
+    core: [
+      "Courageous, passionate, protective, humanitarian.",
+      "Action‑oriented; thrives in high‑impact roles.",
+      "Compassionate advocate; stands for justice.",
+    ],
+    lucky: {
+      numbers: [9, 18, 27],
+      colors: ["red", "crimson", "deep pink"],
+      gemstones: ["Red Coral (Moonga)", "Garnet", "Bloodstone"],
+      days: ["Tuesday"],
+      metal: "Copper/Steel",
+    },
+    compatibility: {
+      harmonise: ["1 (Sun)", "3 (Jupiter)", "5 (Mercury)"],
+      challenge: ["2 (Moon)", "8 (Saturn)"],
+    },
+    strengthsDetailed: [
+      "Initiative & bravery",
+      "Protectiveness & loyalty",
+      "Determination & grit",
+      "Capacity for altruistic service",
+    ],
+    challengesDetailed: [
+      "Impulsiveness & anger",
+      "Conflict‑proneness",
+      "Burnout from overgiving",
+    ],
+    health:
+      "Inflammation, fevers, accidents; channel energy into sport/yoga and mindful cooldowns; cooling diet helps.",
+    careers:
+      "Defense, sports, surgery, emergency services, entrepreneurship, activism, crisis leadership.",
+    spiritual:
+      "Sacred warriorhood — act with compassion and restraint; serve the vulnerable.",
+    personalities: [
+      "Mahatma Gandhi — 2 Oct (2) often aligned with 9 energy of service",
+      "Mother Teresa — 26 Aug → 8/9 humanitarian resonance",
+      "Malala Yousafzai — 12 Jul → 3/9 activism blend",
+    ],
+  },
+};
+
+function reduceToSingleDigit(day) {
+  const s = day
+    .toString()
+    .split("")
+    .reduce((a, b) => a + Number(b), 0);
+  return s > 9 ? reduceToSingleDigit(s) : s;
+}
+
+function App() {
+  const [input, setInput] = useState("");
+
+  const birthdayNumber = useMemo(() => {
+    const n = Number(input);
+    if (!n || n < 1 || n > 31) return null;
+    return reduceToSingleDigit(n);
+  }, [input]);
+
+  const data = birthdayNumber ? NUMBER_DATA[birthdayNumber] : null;
+
+  async function handleDownloadPDF() {
+    const article = document.getElementById("reading");
+    if (!article) return;
+
+    const canvas = await html2canvas(article, {
+      scale: 2,
+      useCORS: true,
+      backgroundColor: "#0a0a0a",
+    });
+    const imgData = canvas.toDataURL("image/png");
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF({ orientation: "p", unit: "pt", format: "a4" });
+
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+    const imgWidth = pageWidth - 40;
+    const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+    if (imgHeight <= pageHeight - 40) {
+      pdf.addImage(imgData, "PNG", 20, 20, imgWidth, imgHeight);
+    } else {
+      let position = 0;
+      const sliceHeight = (canvas.width * (pageHeight - 40)) / imgWidth;
+      while (position < canvas.height) {
+        const slice = document.createElement("canvas");
+        slice.width = canvas.width;
+        slice.height = Math.min(sliceHeight, canvas.height - position);
+        const sctx = slice.getContext("2d");
+        sctx.drawImage(
+          canvas,
+          0,
+          position,
+          canvas.width,
+          slice.height,
+          0,
+          0,
+          canvas.width,
+          slice.height
+        );
+        const img = slice.toDataURL("image/png");
+        pdf.addImage(
+          img,
+          "PNG",
+          20,
+          20,
+          imgWidth,
+          (slice.height * imgWidth) / canvas.width
+        );
+        position += sliceHeight;
+        if (position < canvas.height) pdf.addPage();
+      }
+    }
+    pdf.save(`Numerology_Number_${birthdayNumber}.pdf`);
+  }
+
+  return (
+    <div className="px-6 py-10">
+      <div className="max-w-4xl mx-auto">
+        <header className="mb-8">
+          <h1 className="text-3xl md:text-4xl font-bold tracking-tight">
+            Birthday Numerology Reader
+          </h1>
+          <p className="text-neutral-300 mt-2">
+            Enter your <strong>day of birth</strong> (1–31). We reduce it to a
+            single digit (1–9), map it to its planetary ruler and element, and
+            reveal traits, luck factors, compatibility, careers & spiritual
+            themes.
+          </p>
+          <div className="mt-4 flex flex-col sm:flex-row gap-3">
+            <div className="flex items-center gap-2 text-xs text-neutral-400">
+              <span className="inline-block w-2 h-2 rounded-full bg-emerald-500"></span>
+              Mobile‑friendly
+            </div>
+            <div className="flex items-center gap-2 text-xs text-neutral-400">
+              <span className="inline-block w-2 h-2 rounded-full bg-blue-500"></span>
+              PDF export
+            </div>
+          </div>
+        </header>
+
+        <section className="bg-neutral-900 border border-neutral-800 rounded-2xl p-4 sm:p-5 md:p-6 shadow-xl mb-6">
+          <label className="block text-sm text-neutral-300 mb-2" htmlFor="dob">
+            Day of month
+          </label>
+          <input
+            id="dob"
+            type="number"
+            min={1}
+            max={31}
+            placeholder="e.g., 17"
+            className="w-full md:w-64 rounded-xl bg-neutral-800 border border-neutral-700 px-4 py-3 outline-none focus:ring-2 focus:ring-emerald-500"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+          />
+          {birthdayNumber && (
+            <div className="mt-4 text-sm text-neutral-400">
+              Reduction: {input.split("").join(" + ")} ={" "}
+              {reduceToSingleDigit(Number(input))} →{" "}
+              <span className="text-emerald-400 font-semibold">
+                {birthdayNumber}
+              </span>
+            </div>
+          )}
+        </section>
+
+        {!data && (
+          <p className="text-neutral-400">
+            Enter a day between 1 and 31 to see your reading.
+          </p>
+        )}
+
+        {data && (
+          <article id="reading" className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="col-span-2 bg-neutral-900 border border-neutral-800 rounded-2xl p-5">
+                <h2 className="text-2xl font-semibold">
+                  Number {birthdayNumber} — {data.planet}{" "}
+                  <span className="text-neutral-400">({data.alias})</span>
+                </h2>
+                <div className="mt-1 text-sm text-neutral-400">
+                  Element:{" "}
+                  <span className="text-neutral-200 font-medium">
+                    {data.element}
+                  </span>
+                </div>
+                <p className="mt-4 leading-relaxed text-neutral-200">
+                  {data.origin}
+                </p>
+              </div>
+              <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-5">
+                <h3 className="font-semibold">Lucky Factors</h3>
+                <ul className="mt-2 space-y-1 text-neutral-300 text-sm">
+                  <li>
+                    <span className="text-neutral-400">Numbers:</span>{" "}
+                    {data.lucky.numbers.join(", ")}
+                  </li>
+                  <li>
+                    <span className="text-neutral-400">Colors:</span>{" "}
+                    {data.lucky.colors.join(", ")}
+                  </li>
+                  <li>
+                    <span className="text-neutral-400">Gemstones:</span>{" "}
+                    {data.lucky.gemstones.join(", ")}
+                  </li>
+                  <li>
+                    <span className="text-neutral-400">Days:</span>{" "}
+                    {data.lucky.days.join(", ")}
+                  </li>
+                  {data.lucky.metal && (
+                    <li>
+                      <span className="text-neutral-400">Metal:</span>{" "}
+                      {data.lucky.metal}
+                    </li>
+                  )}
+                </ul>
+                <p className="text-xs text-amber-300 mt-3">
+                  Gemstones can influence energy; wear only with professional
+                  guidance if you have a known horoscope.
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-5">
+                <h3 className="font-semibold">Compatibility</h3>
+                <p className="text-sm text-neutral-300 mt-2">
+                  <span className="text-neutral-400">Harmonise with:</span>{" "}
+                  {data.compatibility.harmonise.join(", ")}
+                </p>
+                <p className="text-sm text-neutral-300">
+                  <span className="text-neutral-400">May challenge:</span>{" "}
+                  {data.compatibility.challenge.join(", ")}
+                </p>
+              </div>
+              <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-5">
+                <h3 className="font-semibold">Strengths</h3>
+                <ul className="mt-2 list-disc list-inside text-sm text-neutral-300 space-y-1">
+                  {(data.strengthsDetailed || data.strengths).map((s, i) => (
+                    <li key={i}>{s}</li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-5">
+                <h3 className="font-semibold">Weaknesses / Challenges</h3>
+                <ul className="mt-2 list-disc list-inside text-sm text-neutral-300 space-y-1">
+                  {(data.challengesDetailed || data.challenges).map((s, i) => (
+                    <li key={i}>{s}</li>
+                  ))}
+                </ul>
+              </div>
+              <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-5">
+                <h3 className="font-semibold">Health Tendencies</h3>
+                <p className="text-sm text-neutral-300 mt-2">{data.health}</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-5">
+                <h3 className="font-semibold">Career Guidance</h3>
+                <p className="text-sm text-neutral-300 mt-2">{data.careers}</p>
+              </div>
+              <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-5">
+                <h3 className="font-semibold">
+                  Spiritual Meaning &amp; Life Themes
+                </h3>
+                <p className="text-sm text-neutral-300 mt-2">
+                  {data.spiritual}
+                </p>
+              </div>
+            </div>
+
+            <footer className="text-xs text-neutral-500 pt-2">
+              This app offers a blended Vedic + Western numerology perspective
+              for self‑reflection and is not a substitute for medical or
+              financial advice.
+            </footer>
+            <div className="flex gap-3 pt-2">
+              <button
+                onClick={handleDownloadPDF}
+                className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-sm font-medium"
+              >
+                Download this reading (PDF)
+              </button>
+            </div>
+          </article>
+        )}
+
+        <section className="mt-10 text-xs text-neutral-500">
+          <h4 className="font-semibold mb-2">Method &amp; Sources</h4>
+          <p>
+            Birthday Number = reduced digits of the calendar day (10–31 reduce
+            to a single digit). Planetary mapping follows widely used
+            Vedic/Chaldean traditions (e.g., 1→Sun, 2→Moon, 3→Jupiter, 4→Rahu,
+            5→Mercury, 6→Venus, 7→Ketu, 8→Saturn, 9→Mars). Elements reflect the
+            energetic qualities of those planets.
+          </p>
+        </section>
+      </div>
+    </div>
+  );
+}
+
+const root = ReactDOM.createRoot(document.getElementById("root"));
+root.render(<App />);
+
+  </script>
+</body>
+</html>
